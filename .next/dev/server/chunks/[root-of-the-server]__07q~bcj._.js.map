@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 40, "column": 0}, "map": {"version":3,"sources":["file:///Users/jihun/Desktop/3-1/protocol/src/app/api/auth/%5B...nextauth%5D/route.ts"],"sourcesContent":["import { handlers } from \"@/auth\"\nexport const { GET, POST } = handlers"],"names":["GET","POST","handlers"],"mappings":";;;;;;;;;;;;AACO,MAAM,EAAEA,GAAG,EAAEC,IAAI,EAAE,GAAGC"}}]
-}

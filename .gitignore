@@ -8,6 +8,8 @@ dist/
 build/
 out/
 .plasmo/
+.next/
+.cache/
 
 # Logs
 *.log
