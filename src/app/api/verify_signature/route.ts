@@ -28,18 +28,24 @@ export async function POST(req: Request) {
     // 3. 암호학 검증
     try {
       const pki = forge.pki;
-      const cert = pki.certificateFromPem(user.certificate);
+      // PEM 문자열의 혹시 모를 개행 문제를 해결하기 위해 \n 처리
+      const certContent = user.certificate.replace(/\\n/g, '\n');
+      const cert = pki.certificateFromPem(certContent);
       const publicKey = cert.publicKey as forge.pki.rsa.PublicKey;
 
-      const md = forge.md.sha1.create();
-      md.update(email + time, 'utf8');
+      const md = forge.md.sha256.create();
+      const messageToVerify = email + time;
+      md.update(messageToVerify, 'utf8');
 
       const signatureBytes = forge.util.hexToBytes(signatureHex);
       const verified = publicKey.verify(md.digest().bytes(), signatureBytes);
+      
 
       if (verified) {
         return NextResponse.json({ message: '신원이 확실하게 증명되었습니다! (서명 일치)' });
       } else {
+        // 상세 디버깅을 위한 로그 (콘솔 출력용)
+        console.warn(`[Verification Failed] Email: ${email}, Time: ${time}`);
         return NextResponse.json({ error: '전자서명이 유효하지 않습니다. (다른 사람의 키로 서명됨)' }, { status: 401 });
       }
     } catch (cryptoError) {
