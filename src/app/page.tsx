@@ -210,17 +210,33 @@ export default function Home() {
       const pki = forge.pki;
       const privateKey = pki.privateKeyFromPem(privateKeyPem);
 
-      const encryptedKeyBytes = forge.util.hexToBytes(msg.encryptedKey);
-      const aesKey = privateKey.decrypt(encryptedKeyBytes);
+      let aesKey;
+      try {
+        const encryptedKeyBytes = forge.util.hexToBytes(msg.encryptedKey);
+        aesKey = privateKey.decrypt(encryptedKeyBytes);
+      } catch (rsaError) {
+        alert('❌ 복호화 실패: 이 메시지는 현재 기기에 저장된 개인키와 다른 인증서 기반으로 암호화되었습니다.\n(예: 다른 PC에서 수신한 과거 메시지)');
+        return;
+      }
 
-      const iv = forge.util.hexToBytes(msg.iv);
-      const encryptedBytes = forge.util.hexToBytes(msg.encryptedContent);
-      const decipher = forge.cipher.createDecipher('AES-CBC', aesKey);
-      decipher.start({ iv: iv });
-      decipher.update(forge.util.createBuffer(encryptedBytes));
-      decipher.finish();
+      let _decipherOutput;
+      try {
+        const iv = forge.util.hexToBytes(msg.iv);
+        const encryptedBytes = forge.util.hexToBytes(msg.encryptedContent);
+        const decipher = forge.cipher.createDecipher('AES-CBC', aesKey);
+        decipher.start({ iv: iv });
+        decipher.update(forge.util.createBuffer(encryptedBytes));
+        
+        if (!decipher.finish()) {
+          throw new Error('데이터 패딩 불일치');
+        }
+        _decipherOutput = forge.util.decodeUtf8(decipher.output.getBytes());
+      } catch (aesError) {
+        alert('❌ 메시지 내용 복호화 실패: 데이터가 손상되었거나 위변조되었습니다.');
+        return;
+      }
       
-      const decryptedData = JSON.parse(decipher.output.toString());
+      const decryptedData = JSON.parse(_decipherOutput);
       const { content, signature } = decryptedData;
 
       const senderPublicKey = pki.publicKeyFromPem(msg.senderPublicKey);
