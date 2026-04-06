@@ -26,6 +26,8 @@ export default function Home() {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [verifyMessage, setVerifyMessage] = useState('');
+
   
   // 전자봉투 관련 상태
   const [targetUsers, setTargetUsers] = useState<any[]>([]);
@@ -96,12 +98,12 @@ export default function Home() {
   const handleSignatureLogin = async () => {
     const privateKeyPem = localStorage.getItem('userPrivateKey');
     if (!privateKeyPem || !session?.user?.email) {
-      setMessage('⚠️ 개인키가 없습니다. 인증서를 먼저 발급받으세요.');
+      setVerifyMessage('⚠️ 개인키가 없습니다. 인증서를 먼저 발급받으세요.');
       return;
     }
 
     try {
-      setMessage('전자서명 생성 및 검증 중...');
+      setVerifyMessage('전자서명 생성 및 검증 중...');
       const pki = forge.pki;
       const privateKey = pki.privateKeyFromPem(privateKeyPem);
       
@@ -124,13 +126,13 @@ export default function Home() {
 
       const data = await res.json();
       if (res.ok) {
-        setMessage(`✅ 검증 성공! (서버: ${data.message})`);
+        setVerifyMessage(`✅ 검증 성공! (서버: ${data.message})`);
       } else {
-        setMessage(`❌ 검증 실패: ${data.error}`);
+        setVerifyMessage(`❌ 검증 실패: ${data.error}`);
       }
     } catch (error) {
       console.error(error);
-      setMessage('❌ 전자서명 중 오류 발생');
+      setVerifyMessage('❌ 전자서명 중 오류 발생');
     }
   };
 
@@ -467,6 +469,24 @@ export default function Home() {
                   <Activity className="w-5 h-5" />
                   서명 검증 요청 (Login)
                 </button>
+
+                <AnimatePresence>
+                  {verifyMessage && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className={`mt-4 p-4 rounded-2xl text-xs font-bold border flex items-start gap-3 leading-relaxed ${
+                        verifyMessage.includes('✅') || verifyMessage.includes('성공') 
+                        ? 'bg-green-500/10 text-green-500 border-green-500/20' 
+                        : 'bg-red-500/10 text-red-500 border-red-500/20'
+                      }`}
+                    >
+                      {verifyMessage.includes('✅') ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+                      {verifyMessage}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.section>
 
               {/* 5. 인증서 상세 정보 */}
